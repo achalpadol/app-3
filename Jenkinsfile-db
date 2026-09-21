@@ -217,14 +217,6 @@ pipeline {
         }
 
         stage('Deploy Database - UAT') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV in ['uat', 'prod']
-                }
-            }
-
             steps {
 
                 script {
