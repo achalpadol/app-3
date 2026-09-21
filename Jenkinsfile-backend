@@ -295,7 +295,7 @@ def deployBackend(namespace, imageName, imageTag) {
 
         echo "Updating backend image..."
 
-        kubectl set image deployment/app1-backend \
+        kubectl set image deployment/app-backend \
             backend=${imageName}:${imageTag} \
             -n ${namespace}
 
