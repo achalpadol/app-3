@@ -213,6 +213,12 @@ pipeline {
         }
 
         stage('Deploy Database - UAT') {
+            when {
+                expression {
+                    params.Environment == 'uat'
+        }
+    }
+
             steps {
 
                 script {
