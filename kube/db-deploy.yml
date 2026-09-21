@@ -27,7 +27,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: backend-secret
-                  key: password
+                  key: MYSQL_ROOT_PASSWORD
 
           volumeMounts:
             - name: db-data
