@@ -31,14 +31,14 @@ spec:
                   name: app3-config
                   key: MYSQL_HOST
 
-          - name: MYSQL_DATABASE
-            valueFrom:
+           - name: MYSQL_DATABASE
+             valueFrom:
               configMapKeyRef:
                 name: app3-config
                 key: MYSQL_DATABASE
 
-          - name: MYSQL_USER
-            valueFrom:
+           - name: MYSQL_USER
+             valueFrom:
               configMapKeyRef:
                 name: app3-config
                 key: MYSQL_USER
