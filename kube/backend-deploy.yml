@@ -33,15 +33,15 @@ spec:
 
            - name: MYSQL_DATABASE
              valueFrom:
-              configMapKeyRef:
-                name: app3-config
-                key: MYSQL_DATABASE
+               configMapKeyRef:
+                 name: app3-config
+                 key: MYSQL_DATABASE
 
            - name: MYSQL_USER
              valueFrom:
-              configMapKeyRef:
-                name: app3-config
-                key: MYSQL_USER
+               configMapKeyRef:
+                 name: app3-config
+                 key: MYSQL_USER
 
           volumeMounts:
             - name: db-password
