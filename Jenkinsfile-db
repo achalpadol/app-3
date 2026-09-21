@@ -134,14 +134,11 @@ pipeline {
             }
 
             steps {
-
-                script {
-
-                    deployDatabase(
-                        DEV_NS,
-                        DEV_REGISTRY,
-                        env.BUILD_NUMBER,
-                        DEV_DOCKER_CREDS
+                 script {
+                     deployDatabase(
+                        env.DEV_NS,
+                        env.DB_IMAGE_DEV,
+                        env.BUILD_NUMBER
                     )
                 }
             }
@@ -184,10 +181,9 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        QA_NS,
-                        QA_REGISTRY,
-                        params.IMAGE_TAG,
-                        QA_DOCKER_CREDS
+                        env.QA_NS,
+                        env.DB_IMAGE_QA,
+                        params.IMAGE_TAG
                     )
                 }
             }
@@ -222,10 +218,9 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        UAT_NS,
-                        UAT_REGISTRY,
-                        params.IMAGE_TAG,
-                        UAT_DOCKER_CREDS
+                        env.UAT_NS,
+                        env.DB_IMAGE_UAT,
+                        params.IMAGE_TAG
                     )
                 }
             }
@@ -273,10 +268,9 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        PROD_NS,
-                        PROD_REGISTRY,
-                        params.IMAGE_TAG,
-                        PROD_DOCKER_CREDS
+                        env.PROD_NS,
+                        env.DB_IMAGE_PROD,
+                        params.IMAGE_TAG
                     )
                 }
             }
