@@ -305,11 +305,25 @@ pipeline {
  */
 def deployDatabase(namespace, imageName, imageTag) {
 
+    echo "=========================================="
+    echo "DATABASE DEPLOYMENT"
+    echo "Namespace : ${namespace}"
+    echo "Image     : ${imageName}:${imageTag}"
+    echo "=========================================="
+
+    if (!imageName?.trim()) {
+        error("imageName is empty or null")
+    }
+
+    if (!imageTag?.trim()) {
+        error("imageTag is empty or null")
+    }
+
     sh """
         set -e
 
         echo "=========================================="
-        echo "Connecting to EKS cluster..."
+        echo "EKS LOGIN"
         echo "=========================================="
 
         aws eks update-kubeconfig \
@@ -317,7 +331,7 @@ def deployDatabase(namespace, imageName, imageTag) {
             --name ${env.EKS_CLUSTER}
 
         echo "=========================================="
-        echo "Creating namespace if required..."
+        echo "CREATE NAMESPACE"
         echo "=========================================="
 
         kubectl create namespace ${namespace} \
@@ -325,38 +339,56 @@ def deployDatabase(namespace, imageName, imageTag) {
             -o yaml | kubectl apply -f -
 
         echo "=========================================="
-        echo "Applying database Kubernetes manifest..."
+        echo "APPLY DATABASE RESOURCES"
         echo "=========================================="
 
         kubectl apply \
-           -f kube/backend-secret.yaml \
-           -f kube/configmap.yml \
-           -f kube/db-pvc.yml \
-           -f kube/db-service.yml \
-           -f kube/db-deploy.yml \
-           -n ${namespace}
+            -f kube/backend-secret.yaml \
+            -f kube/configmap.yml \
+            -f kube/db-pvc.yml \
+            -f kube/db-service.yml \
+            -f kube/db-deploy.yml \
+            -n ${namespace}
 
         echo "=========================================="
-        echo "Updating database Docker image..."
+        echo "SET DATABASE IMAGE"
         echo "=========================================="
 
-        kubectl set image \
-            deployment/db \
+        kubectl set image deployment/db \
             db=${imageName}:${imageTag} \
             -n ${namespace}
 
         echo "=========================================="
-        echo "Waiting for database rollout..."
+        echo "DATABASE DEPLOYMENT"
         echo "=========================================="
 
-        kubectl rollout status \
-            deployment/db \
+        kubectl get deployment db \
             -n ${namespace}
 
         echo "=========================================="
-        echo "Database deployment completed."
-        echo "Image: ${imageName}:${imageTag}"
-        echo "Namespace: ${namespace}"
+        echo "DATABASE POD"
         echo "=========================================="
+
+        kubectl get pods \
+            -n ${namespace} \
+            -l app=db
+
+        echo "=========================================="
+        echo "WAIT FOR ROLLOUT"
+        echo "=========================================="
+
+        kubectl rollout status deployment/db \
+            -n ${namespace} \
+            --timeout=5m
+
+        echo "=========================================="
+        echo "FINAL STATUS"
+        echo "=========================================="
+
+        kubectl get deployment db -n ${namespace}
+
+        kubectl get pods -n ${namespace} -l app=db
+
+        kubectl get pvc -n ${namespace}
     """
 }
