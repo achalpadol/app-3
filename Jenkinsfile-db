@@ -335,7 +335,7 @@ def deployDatabase(namespace, imageName, imageTag) {
         echo "=========================================="
 
         kubectl set image \
-            deployment/app1-db \
+            deployment/db \
             db=${imageName}:${imageTag} \
             -n ${namespace}
 
@@ -344,7 +344,7 @@ def deployDatabase(namespace, imageName, imageTag) {
         echo "=========================================="
 
         kubectl rollout status \
-            deployment/app1-db \
+            deployment/db \
             -n ${namespace}
 
         echo "=========================================="
