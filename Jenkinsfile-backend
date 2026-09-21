@@ -303,7 +303,7 @@ def deployBackend(namespace, imageName, imageTag) {
         echo "Waiting for rollout..."
 
         kubectl rollout status \
-            deployment/app1-backend \
+            deployment/app-backend \
             -n ${namespace}
 
 
