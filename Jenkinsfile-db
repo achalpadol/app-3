@@ -138,7 +138,7 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        DEV_NAMESPACE,
+                        DEV_NS,
                         DEV_REGISTRY,
                         env.BUILD_NUMBER,
                         DEV_DOCKER_CREDS
@@ -184,7 +184,7 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        QA_NAMESPACE,
+                        QA_NS,
                         QA_REGISTRY,
                         params.IMAGE_TAG,
                         QA_DOCKER_CREDS
@@ -222,7 +222,7 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        UAT_NAMESPACE,
+                        UAT_NS,
                         UAT_REGISTRY,
                         params.IMAGE_TAG,
                         UAT_DOCKER_CREDS
@@ -273,7 +273,7 @@ pipeline {
                 script {
 
                     deployDatabase(
-                        PROD_NAMESPACE,
+                        PROD_NS,
                         PROD_REGISTRY,
                         params.IMAGE_TAG,
                         PROD_DOCKER_CREDS
