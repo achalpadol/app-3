@@ -152,7 +152,7 @@ pipeline {
             when {
 
                 expression {
-                    env.DEPLOY_ENV in ['qa', 'uat', 'prod']
+                    env.DEPLOY_ENV = ['qa', 'uat', 'prod']
                 }
             }
 
@@ -175,7 +175,7 @@ pipeline {
             when {
 
                 expression {
-                    env.DEPLOY_ENV in ['qa', 'uat', 'prod']
+                    env.DEPLOY_ENV = ['qa', 'uat', 'prod']
                 }
             }
 
@@ -198,7 +198,7 @@ pipeline {
             when {
 
                 expression {
-                    env.DEPLOY_ENV in ['uat', 'prod']
+                    env.DEPLOY_ENV = ['uat', 'prod']
                 }
             }
 
@@ -221,7 +221,7 @@ pipeline {
             when {
 
                 expression {
-                    env.DEPLOY_ENV in ['uat', 'prod']
+                    env.DEPLOY_ENV = ['uat', 'prod']
                 }
             }
 
@@ -339,7 +339,6 @@ def deployDatabase(namespace, imageName, imageTag) {
         kubectl apply \
            -f kube/backend-secret.yaml \
            -f kube/configmap.yml \
-           -f kube/db-pvc.yml \
            -f kube/db-service.yml \
            -f kube/db-deploy.yml \
            -n ${namespace}
