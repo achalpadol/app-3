@@ -5,11 +5,6 @@ pipeline {
 
     agent any
     environment {
-        DEV_REGISTRY = 'https://index.docker.io/v1/'
-        DOCKER_IMAGE = 'achalpadol/app-3-db'
-    }
-
-    environment {
 
         // Docker build context
         // Dockerfile-db is located in the repository root
@@ -66,24 +61,26 @@ pipeline {
             }
         }
 
-        stage('Validate Parameters') {
+       stage('Validate Parameters') {
+           steps {
+               script {
+                  echo "===================================="
+                  echo "PARAMETER VALUES"
+                  echo "Environment = [${params.ENVIRONMENT}]"
+                  echo "IMAGE_TAG   = [${params.IMAGE_TAG}]"
+                  echo "BUILD_NUMBER = [${BUILD_NUMBER}]"
+                  echo "===================================="
 
-            steps {
+                  if (!params.ENVIRONMENT) {
+                      error("ENVIRONMENT parameter is required")
+                 }
 
-                script {
-
-                    if (params.Environment != 'dev' &&
-                        !params.IMAGE_TAG?.trim()) {
-
-                        error(
-                            "IMAGE_TAG is required for ${params.Environment}. " +
-                            "Enter the image tag created by the DEV build."
-                        )
-                    }
-                }
+                 if (!params.IMAGE_TAG && params.ENVIRONMENT != 'dev') {
+                     error("IMAGE_TAG is required for QA/UAT/PROD")
             }
         }
-
+    }
+}
         stage('Build Database Image - DEV') {
 
             when {
