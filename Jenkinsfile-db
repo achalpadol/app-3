@@ -4,6 +4,7 @@ def databaseImage
 pipeline {
 
     agent any
+
     environment {
 
         // Docker build context
@@ -31,10 +32,10 @@ pipeline {
         EKS_CLUSTER = 'achal-cluster-1'
 
         // Kubernetes namespaces
-        DEV_NS  = 'app3-dev'
-        QA_NS   = 'app3-qa'
-        UAT_NS  = 'app3-uat'
-        PROD_NS = 'app3-prod'
+        DEV_NS  = 'app-dev'
+        QA_NS   = 'app-qa'
+        UAT_NS  = 'app-uat'
+        PROD_NS = 'app-prod'
     }
 
     parameters {
@@ -61,26 +62,24 @@ pipeline {
             }
         }
 
-       stage('Validate Parameters') {
-           steps {
-               script {
-                  echo "===================================="
-                  echo "PARAMETER VALUES"
-                  echo "Environment = [${params.ENVIRONMENT}]"
-                  echo "IMAGE_TAG   = [${params.IMAGE_TAG}]"
-                  echo "BUILD_NUMBER = [${BUILD_NUMBER}]"
-                  echo "===================================="
+        stage('Validate Parameters') {
 
-                  if (!params.ENVIRONMENT) {
-                      error("ENVIRONMENT parameter is required")
-                 }
+            steps {
 
-                 if (!params.IMAGE_TAG && params.ENVIRONMENT != 'dev') {
-                     error("IMAGE_TAG is required for QA/UAT/PROD")
+                script {
+
+                    if (params.Environment != 'dev' &&
+                        !params.IMAGE_TAG?.trim()) {
+
+                        error(
+                            "IMAGE_TAG is required for ${params.Environment}. " +
+                            "Enter the image tag created by the DEV build."
+                        )
+                    }
+                }
             }
         }
-    }
-}
+
         stage('Build Database Image - DEV') {
 
             when {
@@ -125,172 +124,71 @@ pipeline {
                 }
             }
         }
-       stage('Deploy Database - DEV') {
 
-            when {
-
-                expression {
-                    env.DEPLOY_ENV == 'dev'
-                }
-            }
+        stage('Deploy Database') {
 
             steps {
 
                 script {
 
+                    def namespace
+                    def imageName
+                    def imageTag
+
+                    switch (params.Environment) {
+
+                        case 'dev':
+
+                            namespace = env.DEV_NS
+                            imageName = env.DATABASE_IMAGE_DEV
+                            imageTag = env.BUILD_NUMBER
+
+                            break
+
+                        case 'qa':
+
+                            namespace = env.QA_NS
+                            imageName = env.DATABASE_IMAGE_QA
+                            imageTag = params.IMAGE_TAG.trim()
+
+                            break
+
+                        case 'uat':
+
+                            namespace = env.UAT_NS
+                            imageName = env.DATABASE_IMAGE_UAT
+                            imageTag = params.IMAGE_TAG.trim()
+
+                            break
+
+                        case 'prod':
+
+                            namespace = env.PROD_NS
+                            imageName = env.DATABASE_IMAGE_PROD
+                            imageTag = params.IMAGE_TAG.trim()
+
+                            break
+                    }
+
+                    // Manual approval for PROD
+                    if (params.Environment == 'prod') {
+
+                        input(
+                            message: "Deploy database ${imageName}:${imageTag} to PROD?",
+                            ok: 'Deploy to Production'
+                        )
+                    }
+
+                    // Call reusable deployment function
                     deployDatabase(
-                        DEV_NAMESPACE,
-                        DEV_REGISTRY,
-                        env.BUILD_NUMBER,
-                        DEV_DOCKER_CREDS
+                        namespace,
+                        imageName,
+                        imageTag
                     )
                 }
             }
         }
-
-        stage('Promote Database DEV → QA') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV = ['qa', 'uat', 'prod']
-                }
-            }
-
-            steps {
-
-                script {
-
-                    promoteImage(
-                        "${DEV_REGISTRY}:${params.IMAGE_TAG}",
-                        "${QA_REGISTRY}:${params.IMAGE_TAG}",
-                        DEV_DOCKER_CREDS,
-                        QA_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-
-        stage('Deploy Database - QA') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV = ['qa', 'uat', 'prod']
-                }
-            }
-
-            steps {
-
-                script {
-
-                    deployDatabase(
-                        QA_NAMESPACE,
-                        QA_REGISTRY,
-                        params.IMAGE_TAG,
-                        QA_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-
-        stage('Promote Database QA → UAT') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV = ['uat', 'prod']
-                }
-            }
-
-            steps {
-
-                script {
-
-                    promoteImage(
-                        "${QA_REGISTRY}:${params.IMAGE_TAG}",
-                        "${UAT_REGISTRY}:${params.IMAGE_TAG}",
-                        QA_DOCKER_CREDS,
-                        UAT_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-
-        stage('Deploy Database - UAT') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV = ['uat', 'prod']
-                }
-            }
-
-            steps {
-
-                script {
-
-                    deployDatabase(
-                        UAT_NAMESPACE,
-                        UAT_REGISTRY,
-                        params.IMAGE_TAG,
-                        UAT_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-
-        stage('Promote Database UAT → PROD') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV == 'prod'
-                }
-            }
-
-            steps {
-
-                input(
-                    message: "Promote database ${params.IMAGE_TAG} from UAT to PROD?",
-                    ok: 'Promote to Production'
-                )
-
-                script {
-
-                    promoteImage(
-                        "${UAT_REGISTRY}:${params.IMAGE_TAG}",
-                        "${PROD_REGISTRY}:${params.IMAGE_TAG}",
-                        UAT_DOCKER_CREDS,
-                        PROD_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-
-        stage('Deploy Database - PROD') {
-
-            when {
-
-                expression {
-                    env.DEPLOY_ENV == 'prod'
-                }
-            }
-
-            steps {
-
-                script {
-
-                    deployDatabase(
-                        PROD_NAMESPACE,
-                        PROD_REGISTRY,
-                        params.IMAGE_TAG,
-                        PROD_DOCKER_CREDS
-                    )
-                }
-            }
-        }
-    }             
+    }
 
     post {
 
@@ -349,7 +247,7 @@ def deployDatabase(namespace, imageName, imageTag) {
         echo "=========================================="
 
         kubectl set image \
-            deployment/app3-db \
+            deployment/app1-db \
             db=${imageName}:${imageTag} \
             -n ${namespace}
 
@@ -358,7 +256,7 @@ def deployDatabase(namespace, imageName, imageTag) {
         echo "=========================================="
 
         kubectl rollout status \
-            deployment/app3-db \
+            deployment/app1-db \
             -n ${namespace}
 
         echo "=========================================="
