@@ -295,7 +295,7 @@ def deployBackend(namespace, imageName, imageTag) {
 
         echo "Updating backend image..."
 
-        kubectl set image deployment/backend \
+        kubectl set image deployment/app-backend \
             backend=${imageName}:${imageTag} \
             -n ${namespace}
 
@@ -303,7 +303,7 @@ def deployBackend(namespace, imageName, imageTag) {
         echo "Waiting for rollout..."
 
         kubectl rollout status \
-            deployment/backend \
+            deployment/app-backend \
             -n ${namespace}
 
 
