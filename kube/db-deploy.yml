@@ -21,19 +21,15 @@ spec:
 
           env:
             - name: MYSQL_DATABASE
-              value: example
+              valueFrom:
+                configMapKeyRef:
+                  name: app3-config
+                  key: MYSQL_DATABASE
 
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: backend-secret
+                  name: db-secret
                   key: MYSQL_ROOT_PASSWORD
 
-          volumeMounts:
-            - name: db-data
-              mountPath: /var/lib/mysql
-
-      volumes:
-        - name: db-data
-          persistentVolumeClaim:
-            claimName: db-data
+    
