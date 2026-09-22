@@ -4,6 +4,10 @@ def databaseImage
 pipeline {
 
     agent any
+    environment {
+        DEV_REGISTRY = 'https://index.docker.io/v1/'
+        DOCKER_IMAGE = 'achalpadol/app-3-db'
+    }
 
     environment {
 
