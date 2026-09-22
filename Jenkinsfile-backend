@@ -11,10 +11,10 @@ pipeline {
         BACKEND_DOCKERFILE = './backend/Dockerfile'
 
         // Docker Hub images
-        BACKEND_IMAGE_DEV  = 'achalpadol/app-3-backend'
-        BACKEND_IMAGE_QA   = 'achalpadol/app-3-backend'
-        BACKEND_IMAGE_UAT  = 'achalpadol/app-3-backend'
-        BACKEND_IMAGE_PROD = 'achalpadol/app-3-backend'
+        BACKEND_IMAGE_DEV  = 'achalpadol/app-1-backend'
+        BACKEND_IMAGE_QA   = 'achalpadol/app-1-backend'
+        BACKEND_IMAGE_UAT  = 'achalpadol/app-1-backend'
+        BACKEND_IMAGE_PROD = 'achalpadol/app-1-backend'
 
         // Docker Registry
         REGISTRY_URL = 'https://index.docker.io/v1/'
@@ -30,10 +30,10 @@ pipeline {
         EKS_CLUSTER = 'achal-cluster-1'
 
         // Kubernetes namespaces
-        DEV_NS  = 'app3-dev'
-        QA_NS   = 'app3-qa'
-        UAT_NS  = 'app3-uat'
-        PROD_NS = 'app3-prod'
+        DEV_NS  = 'app-dev'
+        QA_NS   = 'app-qa'
+        UAT_NS  = 'app-uat'
+        PROD_NS = 'app-prod'
     }
 
     parameters {
@@ -295,7 +295,7 @@ def deployBackend(namespace, imageName, imageTag) {
 
         echo "Updating backend image..."
 
-        kubectl set image deployment/app-backend \
+        kubectl set image deployment/app1-backend \
             backend=${imageName}:${imageTag} \
             -n ${namespace}
 
@@ -303,7 +303,7 @@ def deployBackend(namespace, imageName, imageTag) {
         echo "Waiting for rollout..."
 
         kubectl rollout status \
-            deployment/app-backend \
+            deployment/app1-backend \
             -n ${namespace}
 
 
