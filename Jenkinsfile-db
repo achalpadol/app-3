@@ -125,65 +125,159 @@ pipeline {
             }
         }
 
-        stage('Deploy Database') {
+        stage('Deploy Database - DEV') {
+
+            when {
+                expression {
+                    params.Environment == 'dev'
+                }
+            }
 
             steps {
 
                 script {
 
-                    def namespace
-                    def imageName
-                    def imageTag
-
-                    switch (params.Environment) {
-
-                        case 'dev':
-
-                            namespace = env.DEV_NS
-                            imageName = env.DATABASE_IMAGE_DEV
-                            imageTag = env.BUILD_NUMBER
-
-                            break
-
-                        case 'qa':
-
-                            namespace = env.QA_NS
-                            imageName = env.DATABASE_IMAGE_QA
-                            imageTag = params.IMAGE_TAG.trim()
-
-                            break
-
-                        case 'uat':
-
-                            namespace = env.UAT_NS
-                            imageName = env.DATABASE_IMAGE_UAT
-                            imageTag = params.IMAGE_TAG.trim()
-
-                            break
-
-                        case 'prod':
-
-                            namespace = env.PROD_NS
-                            imageName = env.DATABASE_IMAGE_PROD
-                            imageTag = params.IMAGE_TAG.trim()
-
-                            break
-                    }
-
-                    // Manual approval for PROD
-                    if (params.Environment == 'prod') {
-
-                        input(
-                            message: "Deploy database ${imageName}:${imageTag} to PROD?",
-                            ok: 'Deploy to Production'
-                        )
-                    }
-
-                    // Call reusable deployment function
                     deployDatabase(
-                        namespace,
-                        imageName,
-                        imageTag
+                        env.DEV_NS,
+                        env.DATABASE_IMAGE_DEV,
+                        env.BUILD_NUMBER
+                    )
+                }
+            }
+        }
+
+        stage('Promote Database DEV → QA') {
+
+            when {
+                expression {
+                    params.Environment in ['qa', 'uat', 'prod']
+                }
+            }
+
+            steps {
+
+                script {
+
+                    promoteImage(
+                        env.DATABASE_IMAGE_DEV,
+                        env.DATABASE_IMAGE_QA,
+                        params.IMAGE_TAG,
+                        env.DEV_DH_CREDENTIALS,
+                        env.QA_DH_CREDENTIALS
+                    )
+                }
+            }
+        }
+
+        stage('Deploy Database - QA') {
+
+            when {
+                expression {
+                    params.Environment in ['qa', 'uat', 'prod']
+                }
+            }
+
+            steps {
+
+                script {
+
+                    deployDatabase(
+                        env.QA_NS,
+                        env.DATABASE_IMAGE_QA,
+                        params.IMAGE_TAG
+                    )
+                }
+            }
+        }
+
+        stage('Promote Database QA → UAT') {
+
+            when {
+                expression {
+                    params.Environment in ['uat', 'prod']
+                }
+            }
+
+            steps {
+
+                script {
+
+                    promoteImage(
+                        env.DATABASE_IMAGE_QA,
+                        env.DATABASE_IMAGE_UAT,
+                        params.IMAGE_TAG,
+                        env.QA_DH_CREDENTIALS,
+                        env.UAT_DH_CREDENTIALS
+                    )
+                }
+            }
+        }
+
+        stage('Deploy Database - UAT') {
+
+            when {
+                expression {
+                    params.Environment in ['uat', 'prod']
+                }
+            }
+
+            steps {
+
+                script {
+
+                    deployDatabase(
+                        env.UAT_NS,
+                        env.DATABASE_IMAGE_UAT,
+                        params.IMAGE_TAG
+                    )
+                }
+            }
+        }
+
+        stage('Promote Database UAT → PROD') {
+
+            when {
+                expression {
+                    params.Environment == 'prod'
+                }
+            }
+
+            steps {
+
+                input(
+                    message: "Promote database ${params.IMAGE_TAG} from UAT to PROD?",
+                    ok: 'Promote to Production'
+                )
+
+                script {
+
+                    promoteImage(
+                        env.DATABASE_IMAGE_UAT,
+                        env.DATABASE_IMAGE_PROD,
+                        params.IMAGE_TAG,
+                        env.UAT_DH_CREDENTIALS,
+                        env.PROD_DH_CREDENTIALS
+                    )
+                }
+            }
+        }
+
+        stage('Deploy Database - PROD') {
+
+            when {
+                expression {
+                    params.Environment == 'prod'
+                }
+            }
+
+            steps {
+
+                script {
+
+                    deployDatabase(
+                        env.PROD_NS,
+                        env.DATABASE_IMAGE_PROD,
+                        params.IMAGE_TAG
                     )
                 }
             }
@@ -205,7 +299,6 @@ pipeline {
         }
     }
 }
-
 
 /*
  * Reusable database deployment function
@@ -263,6 +356,48 @@ def deployDatabase(namespace, imageName, imageTag) {
         echo "Database deployment completed."
         echo "Image: ${imageName}:${imageTag}"
         echo "Namespace: ${namespace}"
+        echo "=========================================="
+    """
+}
+/*
+ * Reusable image promotion function
+ *
+ * Since DEV/QA/UAT/PROD use the same Docker Hub repository,
+ * the same immutable image tag is reused across environments.
+ */
+def promoteImage(
+    sourceImage,
+    targetImage,
+    imageTag,
+    sourceCredentials,
+    targetCredentials
+) {
+
+    sh """
+        set -e
+
+        echo "=========================================="
+        echo "Checking source Docker image..."
+        echo "=========================================="
+
+        docker pull ${sourceImage}:${imageTag}
+
+        echo "=========================================="
+        echo "Source image verified."
+        echo "=========================================="
+
+        echo "Image: ${sourceImage}:${imageTag}"
+
+        echo "=========================================="
+        echo "Target image:"
+        echo "=========================================="
+
+        echo "${targetImage}:${imageTag}"
+
+        echo "=========================================="
+        echo "Because source and target repositories are"
+        echo "the same Docker Hub repository, the same"
+        echo "image tag will be promoted without rebuild."
         echo "=========================================="
     """
 }
