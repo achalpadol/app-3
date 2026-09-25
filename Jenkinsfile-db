@@ -266,13 +266,7 @@ pipeline {
 // FUNCTION: Deploy Database to EKS
 // =============================================================
 
-def deployDatabaseToEKS(
-    String environment,
-    String image,
-    String imageTag
-) {
-
-    def namespace = "app-${environment}"
+ def namespace = "app-${environment}"
 
     sh """
 
@@ -288,24 +282,31 @@ def deployDatabaseToEKS(
         echo "Applying database Kubernetes manifests to ${namespace}"
 
         kubectl apply \
-            -f kube/backend-secret.yaml \
+            -f kube/db-secret.yml \
+            -f kube/db-pvc.yml
             -f kube/configmap.yml \
-            -f kube/db-pvc.yml \
             -f kube/db-service.yml \
-            -f kube/db-deploy.yml \
+            -f kube/db-deployment.yml \
             -n ${namespace}
+
+        echo "Getting database container name"
+
+        CONTAINER_NAME=\$(kubectl get deployment db \
+        -n ${NAMESPACE} \
+        -o jsonpath='{.spec.template.spec.containers[0].name}')
+
+        echo "Container name: \$CONTAINER_NAME"
 
         echo "Updating database image"
 
         kubectl -n ${namespace} set image deployment/db \
-            postgress=${image}:${imageTag}
+            \$CONTAINER_NAME=${image}:${imageTag}
 
         echo "Waiting for database rollout"
 
         kubectl -n ${namespace} rollout status deployment/db
     """
 }
-
 // =============================================================
 // FUNCTION: Promote Docker Image
 // =============================================================
