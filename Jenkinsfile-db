@@ -296,16 +296,16 @@ def deployDatabaseToEKS(
 
         echo "Getting database container name"
 
-        CONTAINER_NAME=\\\$(kubectl get deployment db \\
+        CONTAINER_NAME=\$(kubectl get deployment db \\
             -n ${namespace} \\
             -o jsonpath='{.spec.template.spec.containers[0].name}')
 
-        echo "Container name: \\\$CONTAINER_NAME"
+        echo "Container name: \$CONTAINER_NAME"
 
         echo "Updating database image"
 
         kubectl -n ${namespace} set image deployment/db \\
-            \\\$CONTAINER_NAME=${image}:${imageTag}
+            \$CONTAINER_NAME=${image}:${imageTag}
 
         echo "Waiting for database rollout"
 
