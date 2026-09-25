@@ -297,12 +297,12 @@ def deployDatabaseToEKS(
 
         echo "Updating database image"
 
-        kubectl -n ${namespace} set image deployment/app1-db \
-            db=${image}:${imageTag}
+        kubectl -n ${namespace} set image deployment/db \
+            postgress=${image}:${imageTag}
 
         echo "Waiting for database rollout"
 
-        kubectl -n ${namespace} rollout status deployment/app1-db
+        kubectl -n ${namespace} rollout status deployment/db
     """
 }
 
