@@ -298,7 +298,7 @@ def deployDatabaseToEKS(
 
         CONTAINER_NAME=\\\$(kubectl get deployment db \\
             -n ${namespace} \\
-            -o jsonpath='{.spec.template.spec.containers[0].name}'
+            -o jsonpath='{.spec.template.spec.containers[0].name}')
 
         echo "Container name: \\\$CONTAINER_NAME"
 
