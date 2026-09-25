@@ -287,11 +287,11 @@ def deployDatabaseToEKS(
         echo "Applying database Kubernetes manifests to ${namespace}"
 
         kubectl apply \\
-            -f kube/db-secret.yml \\
+            -f kube/backend-secret.yml \\
             -f kube/db-pvc.yml \\
             -f kube/configmap.yml \\
             -f kube/db-service.yml \\
-            -f kube/db-deployment.yml \\
+            -f kube/db-deploy.yml \\
             -n ${namespace}
 
         echo "Getting database container name"
